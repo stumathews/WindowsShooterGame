@@ -11,6 +11,7 @@ namespace WindowsShooterGame
     {
         GraphicsDeviceManager graphics;
         SpriteBatch spriteBatch;
+        private Player player;
 
         public Game1()
         {
@@ -27,7 +28,7 @@ namespace WindowsShooterGame
         protected override void Initialize()
         {
             // TODO: Add your initialization logic here
-
+            player = new Player();
             base.Initialize();
         }
 
@@ -39,6 +40,12 @@ namespace WindowsShooterGame
         {
             // Create a new SpriteBatch, which can be used to draw textures.
             spriteBatch = new SpriteBatch(GraphicsDevice);
+            
+            var playerPosition = new Vector2(
+                GraphicsDevice.Viewport.TitleSafeArea.X,
+                GraphicsDevice.Viewport.TitleSafeArea.Y + GraphicsDevice.Viewport.TitleSafeArea.Height / 2);
+            
+            player.Initialize(Content.Load<Texture2D>("Graphics\\player"), playerPosition);
 
             // TODO: use this.Content to load your game content here
         }
@@ -76,6 +83,11 @@ namespace WindowsShooterGame
             GraphicsDevice.Clear(Color.CornflowerBlue);
 
             // TODO: Add your drawing code here
+            spriteBatch.Begin();
+
+            player.Draw(spriteBatch);
+
+            spriteBatch.End();
 
             base.Draw(gameTime);
         }
