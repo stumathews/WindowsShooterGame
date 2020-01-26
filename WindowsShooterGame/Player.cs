@@ -4,10 +4,10 @@ using Microsoft.Xna.Framework.Graphics;
 
 namespace WindowsShooterGame
 {
-    public class Player
+    internal class Player
     {
-        // Animation representing the player
-        public Texture2D Texture { get; set; }
+        // Animation representing the player - texture abstraction
+        public Animation PlayerAnimation;
 
         // position of the player, relative to upper left of screen
         public Vector2 Position;
@@ -19,28 +19,35 @@ namespace WindowsShooterGame
         public int Health { get; set; }
 
         // Width of the player 
-        public int Width => Texture.Width;
+        public int Width => PlayerAnimation.FrameWidth;
 
         // Height of the player's image
-        public int Height => Texture.Height;
+        public int Height => PlayerAnimation.FrameHeight;
 
-        public void Initialize(Texture2D texture, Vector2 position)
+        public void Initialize(Animation animation, Vector2 position)
         {
-            Texture = texture;
+            // This abstracts the Texture, which is presented by this object 
+            PlayerAnimation = animation;
             Position = position;
             Active = true;
             Health = 100;
 
         }
-        public void Update (){ }
+
+        public void Update(GameTime gameTime)
+        {
+            // pass the player's position to the animation, so that the animation can draw to that position
+            PlayerAnimation.Position = Position;
+
+            // Update the animation if needed
+            PlayerAnimation.Update(gameTime);
+        }
 
         public void Draw(SpriteBatch spritebatch)
         {
-            var drawPosition = new Vector2(x: Position.X, y: Position.Y);
-            spritebatch.Draw(Texture, drawPosition, null, Color.White, 0f, Vector2.Zero, 1f, SpriteEffects.None, 0f);
+            // We've delegated drawing the player to the PlayerAnimation object
+            PlayerAnimation.Draw(spritebatch);
         }
-
-        
 
     }
 }
