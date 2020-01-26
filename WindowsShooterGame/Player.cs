@@ -10,7 +10,7 @@ namespace WindowsShooterGame
         public Texture2D Texture { get; set; }
 
         // position of the player, relative to upper left of screen
-        public Vector2 Position { get; set; }
+        public Vector2 Position;
 
         // State of the player
         public bool Active { get; set; }
@@ -39,6 +39,8 @@ namespace WindowsShooterGame
             var drawPosition = new Vector2(x: Position.X, y: Position.Y);
             spritebatch.Draw(Texture, drawPosition, null, Color.White, 0f, Vector2.Zero, 1f, SpriteEffects.None, 0f);
         }
+
+        
 
     }
 }
