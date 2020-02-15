@@ -5,6 +5,8 @@ using Microsoft.Xna.Framework.Audio;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using Microsoft.Xna.Framework.Media;
+using GamLib;
+using GamLib.EventDriven;
 
 namespace WindowsShooterGame
 {
@@ -13,6 +15,7 @@ namespace WindowsShooterGame
     /// </summary>
     public class Game1 : Game
     {
+        private InputListener _inputListner;
         private ParallaxingBackground _bgLayer1;
         private ParallaxingBackground _bgLayer2;
         private GamePadState _currentGamePadState;
@@ -65,6 +68,18 @@ namespace WindowsShooterGame
             const float secondsInMinutes = 60f;
             const float rateOfFire = 200f;
 
+            _inputListner = new InputListener();
+            /*
+             if (_currentKeyboardState.IsKeyDown(Keys.Space) || _currentGamePadState.Buttons.X == ButtonState.Pressed)
+                FireLaser(gameTime);
+             *
+             */
+            _inputListner.OnKeyDown += InputListenerOnOnKeyDown;
+            _inputListner.OnGamePadPressed += InputListenerOnOnGamePadPressed;
+
+            _inputListner.SupportKey(Keys.Space);
+            _inputListner.SupportButton(Buttons.X);
+
             _score = 0;
             _player = new Player();
             _playerMoveSpeed = 8.0f;
@@ -80,6 +95,18 @@ namespace WindowsShooterGame
             _explosions = new List<Explosion>();
 
             base.Initialize();
+        }
+
+        private void InputListenerOnOnGamePadPressed(object sender, GamePadEventArgs e)
+        {
+             if(e.Buttons == Buttons.X)
+                 FireLaser(e.GameTime);
+        }
+
+        private void InputListenerOnOnKeyDown(object sender, KeyboardEventArgs e)
+        {
+            if(e.Key == Keys.Space)
+                FireLaser(e.GameTime);
         }
 
         protected override void LoadContent()
@@ -124,6 +151,8 @@ namespace WindowsShooterGame
             if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed ||
                 Keyboard.GetState().IsKeyDown(Keys.Escape))
                 Exit();
+
+            _inputListner.Update(gameTime);
 
             _previousKeyboardState = _currentKeyboardState;
             _previousMouseState = _currentMouseState;
@@ -326,8 +355,8 @@ namespace WindowsShooterGame
 
             _player.Update(gameTime);
 
-            if (_currentKeyboardState.IsKeyDown(Keys.Space) || _currentGamePadState.Buttons.X == ButtonState.Pressed)
-                FireLaser(gameTime);
+            //if (_currentKeyboardState.IsKeyDown(Keys.Space) || _currentGamePadState.Buttons.X == ButtonState.Pressed)
+            //    FireLaser(gameTime);
 
             if (_player.Health <= 0)
             {
