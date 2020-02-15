@@ -1,6 +1,7 @@
 ﻿using System;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+
 namespace WindowsShooterGame
 {
     public class Explosion
@@ -24,10 +25,7 @@ namespace WindowsShooterGame
         {
             explosionAnimation.Update(gameTime);
             timeToLive -= 1;
-            if(timeToLive <= 0)
-            {
-                Active = false;
-            }
+            if (timeToLive <= 0) Active = false;
         }
 
         public void Draw(SpriteBatch spriteBatch)

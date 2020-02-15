@@ -4,7 +4,7 @@ using Microsoft.Xna.Framework.Graphics;
 
 namespace WindowsShooterGame
 {
-    class Enemy
+    internal class Enemy
     {
         public Animation EnemyAnimation;
         public Vector2 Position;
@@ -41,10 +41,7 @@ namespace WindowsShooterGame
             EnemyAnimation.Position = Position;
             EnemyAnimation.Update(gameTime);
 
-            if (Position.X < -Width || Health <= 0)
-            {
-                Active = false;
-            }
+            if (Position.X < -Width || Health <= 0) Active = false;
         }
 
         public void Draw(SpriteBatch spriteBatch)

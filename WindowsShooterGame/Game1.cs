@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Security;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Audio;
 using Microsoft.Xna.Framework.Graphics;
@@ -10,307 +9,134 @@ using Microsoft.Xna.Framework.Media;
 namespace WindowsShooterGame
 {
     /// <summary>
-    /// This is the main type for your game.
+    ///     This is the main type for your game.
     /// </summary>
     public class Game1 : Game
     {
-        GraphicsDeviceManager graphics;
-        SpriteBatch spriteBatch;
-        private Player player;
+        private ParallaxingBackground _bgLayer1;
+        private ParallaxingBackground _bgLayer2;
+        private GamePadState _currentGamePadState;
 
-        // For keyboard presses
-        private KeyboardState currentKeyboardState;
-        private KeyboardState previousKeyboardState;
+        private KeyboardState _currentKeyboardState;
+        private MouseState _currentMouseState;
+        private List<Enemy> _enemies;
 
-        // for gamepad states
-        private GamePadState currentGamePadState;
-        private GamePadState previousGamePadState;
+        private TimeSpan _enemySpawnTime;
 
-        // for mouse states
-        private MouseState currentMouseState;
-        private MouseState previousMouseState;
+        private Texture2D _enemyTexture;
+        private SoundEffectInstance _explosionEffectInstance;
 
-        //movement speed for the player
-        private float playerMoveSpeed;
-        private Texture2D mainBackground;
-        private ParallaxingBackground bgLayer1;
-        private ParallaxingBackground bgLayer2;
+        private List<Explosion> _explosions;
+        private SoundEffect _explosionSound;
+        private Texture2D _explosionTexture;
+        private SpriteFont _font;
 
-        private Texture2D enemyTextture;
-        private List<Enemy> enemies;
+        private Song _gameMusic;
+        private GraphicsDeviceManager _graphics;
+        private List<Laser> _laserBeams;
 
-        // the rate at which the anemies will appear
-        private TimeSpan enemySpawnTime;
-        private TimeSpan previousSpawnTime;
+        private SoundEffect _laserSound;
+        private SoundEffectInstance _laserSoundEffectInstance;
+        private TimeSpan _laserSpawnTime;
 
-        private Random random;
+        private Texture2D _laserTexture;
+        private Texture2D _mainBackgroundTexture;
+        private Player _player;
 
-        private Texture2D laserTexture;
-        private TimeSpan laserSpawnTime;
-        private TimeSpan previousLaserSpawnTime;
-        private List<Laser> laserBeams;
+        private float _playerMoveSpeed;
+        private GamePadState _previousGamePadState;
+        private KeyboardState _previousKeyboardState;
+        private TimeSpan _previousLaserSpawnTime;
+        private MouseState _previousMouseState;
+        private TimeSpan _previousSpawnTime;
 
-        private List<Explosion> explosions;
-        private Texture2D explosionTexture;
-
-        private SoundEffect laserSound;
-        private SoundEffectInstance laserSoundEffectInstance;
-        private SoundEffect explosionSound;
-        private SoundEffectInstance explosionEffectInstance;
-
-        private Song gameMusic;
-        private SpriteFont font;
-        private int score;
+        private Random _random;
+        private int _score;
+        private SpriteBatch _spriteBatch;
 
         public Game1()
         {
-            graphics = new GraphicsDeviceManager(this);
+            _graphics = new GraphicsDeviceManager(this);
             Content.RootDirectory = "Content";
         }
 
-        /// <summary>
-        /// Allows the game to perform any initialization it needs to before starting to run.
-        /// This is where it can query for any required services and load any non-graphic
-        /// related content.  Calling base.Initialize will enumerate through any components
-        /// and initialize them as well.
-        /// </summary>
         protected override void Initialize()
         {
-            // TODO: Add your initialization logic here
-            score = 0;
-            player = new Player();
-            playerMoveSpeed = 8.0f;
-            bgLayer1 = new ParallaxingBackground();
-            bgLayer2 = new ParallaxingBackground();
+            const float secondsInMinutes = 60f;
+            const float rateOfFire = 200f;
 
-            enemies = new List<Enemy>();
-
-            previousSpawnTime = TimeSpan.Zero;
-            enemySpawnTime = TimeSpan.FromSeconds(1.0f);
-            random = new Random();
-
-            laserBeams = new List<Laser>();
-            const float SECONDS_IN_MINUTES = 60f;
-            const float RATE_OF_FIRE = 200f;
-            laserSpawnTime = TimeSpan.FromSeconds(SECONDS_IN_MINUTES / RATE_OF_FIRE);
-            previousLaserSpawnTime = TimeSpan.Zero;
-            
-            explosions = new List<Explosion>();
-          
-
+            _score = 0;
+            _player = new Player();
+            _playerMoveSpeed = 8.0f;
+            _bgLayer1 = new ParallaxingBackground();
+            _bgLayer2 = new ParallaxingBackground();
+            _enemies = new List<Enemy>();
+            _previousSpawnTime = TimeSpan.Zero;
+            _enemySpawnTime = TimeSpan.FromSeconds(1.0f);
+            _random = new Random();
+            _laserBeams = new List<Laser>();
+            _laserSpawnTime = TimeSpan.FromSeconds(secondsInMinutes / rateOfFire);
+            _previousLaserSpawnTime = TimeSpan.Zero;
+            _explosions = new List<Explosion>();
 
             base.Initialize();
         }
 
-        protected void AddExplosion(Vector2 enemyPosition)
-        {
-            Animation explosionAnimation = new Animation();
-            explosionAnimation.Initialize(explosionTexture,
-                enemyPosition, 134,
-                134,
-                12, Color.White, 1.0f,
-                true);
-
-            Explosion explosion = new Explosion();
-            explosion.Initialize(explosionAnimation, enemyPosition);
-            explosions.Add(explosion);
-            explosionEffectInstance.Play();
-        }
-
-        protected void FireLaser(GameTime gameTime)
-        {
-            if (gameTime.TotalGameTime - previousLaserSpawnTime > laserSpawnTime)
-            {
-                previousLaserSpawnTime = gameTime.TotalGameTime;
-                AddLaser();
-
-                laserSoundEffectInstance.Play();
-            }
-        }
-
-        private void AddLaser()
-        {
-            Animation laserAnimation = new Animation();
-            laserAnimation.Initialize(laserTexture, player.Position,
-                46,16,1,Color.White, 1f, true);
-            Laser laser = new Laser();
-
-            var laserPosition = player.Position;
-            laserPosition.X += 30;
-
-            laser.Initialize(laserAnimation, laserPosition);
-            laserBeams.Add(laser);
-        }
-
-        /// <summary>
-        /// LoadContent will be called once per game and is the place to load
-        /// all of your content.
-        /// </summary>
         protected override void LoadContent()
         {
-            // Create a new SpriteBatch, which can be used to draw textures.
-            spriteBatch = new SpriteBatch(GraphicsDevice);
-        
-            // TODO: use this.Content to load your game content here
-                
+            _spriteBatch = new SpriteBatch(GraphicsDevice);
+
             var playerAnimation = new Animation();
-            var playerPosition = new Vector2(GraphicsDevice.Viewport.TitleSafeArea.X, GraphicsDevice.Viewport.TitleSafeArea.Y + GraphicsDevice.Viewport.TitleSafeArea.Height / 2);
+            var playerPosition = new Vector2(GraphicsDevice.Viewport.TitleSafeArea.X,
+                GraphicsDevice.Viewport.TitleSafeArea.Y + GraphicsDevice.Viewport.TitleSafeArea.Height / 2);
 
-            // Load in the texture into the animation object - this is a sprite strip texture...
-            playerAnimation.Initialize(Content.Load<Texture2D>("Graphics\\shipAnimation"), Vector2.Zero, 115, 69, 8, Color.White, 1f, true);
-            
-            // Use the animation in the player
-            player.Initialize(playerAnimation, playerPosition);
+            playerAnimation.Initialize(Content.Load<Texture2D>("Graphics\\shipAnimation"), Vector2.Zero, 115, 69, 8,
+                Color.White, 1f, true);
 
-            bgLayer1.Initialize(Content, "Graphics/bgLayer1", GraphicsDevice.Viewport.Width,
+            _player.Initialize(playerAnimation, playerPosition);
+
+            _bgLayer1.Initialize(Content, "Graphics/bgLayer1", GraphicsDevice.Viewport.Width,
                 GraphicsDevice.Viewport.Height, -1);
-            bgLayer2.Initialize(Content, "Graphics/bgLayer2", GraphicsDevice.Viewport.Width,
+            _bgLayer2.Initialize(Content, "Graphics/bgLayer2", GraphicsDevice.Viewport.Width,
                 GraphicsDevice.Viewport.Height, -2);
-            mainBackground = Content.Load<Texture2D>("Graphics/mainBackground");
 
-            enemyTextture = Content.Load<Texture2D>("Graphics/mineAnimation");
-            laserTexture = Content.Load<Texture2D>("Graphics/laser");
-            explosionTexture = Content.Load<Texture2D>("Graphics/explosion");
-            laserSound = Content.Load<SoundEffect>("Sound/laserFire");
-            laserSoundEffectInstance = laserSound.CreateInstance();
-            explosionSound = Content.Load<SoundEffect>("Sound/explosion");
-            explosionEffectInstance = explosionSound.CreateInstance();
-            font = Content.Load<SpriteFont>("Graphics/gameFont");
-            gameMusic = Content.Load<Song>("Sound/gameMusic");
-            MediaPlayer.Play(gameMusic);
-        }
+            _mainBackgroundTexture = Content.Load<Texture2D>("Graphics/mainBackground");
+            _enemyTexture = Content.Load<Texture2D>("Graphics/mineAnimation");
+            _laserTexture = Content.Load<Texture2D>("Graphics/laser");
+            _explosionTexture = Content.Load<Texture2D>("Graphics/explosion");
+            _laserSound = Content.Load<SoundEffect>("Sound/laserFire");
+            _laserSoundEffectInstance = _laserSound.CreateInstance();
+            _explosionSound = Content.Load<SoundEffect>("Sound/explosion");
+            _explosionEffectInstance = _explosionSound.CreateInstance();
+            _font = Content.Load<SpriteFont>("Graphics/gameFont");
+            _gameMusic = Content.Load<Song>("Sound/gameMusic");
 
-        private void AddEnemy()
-        {
-            Animation enemyAnimation = new Animation();
-
-            enemyAnimation.Initialize(enemyTextture, Vector2.Zero, 47, 61, 8,  Color.White, 1f, true);
-            Vector2 position = new Vector2(GraphicsDevice.Viewport.Width + enemyTextture.Width /2,
-                random.Next(100, GraphicsDevice.Viewport.Height - 100));
-            Enemy enemy = new Enemy();
-            enemy.Initialize(enemyAnimation, position);
-            enemies.Add(enemy);
-        }
-
-        private void UpdateEnemies(GameTime gameTime)
-        {
-            if (gameTime.TotalGameTime - previousSpawnTime > enemySpawnTime)
-            {
-                previousSpawnTime = gameTime.TotalGameTime;
-                AddEnemy();
-            }
-
-            for (int i = enemies.Count - 1; i >= 0; i--)
-            {
-                enemies[i].Update(gameTime);
-                if (enemies[i].Active == false)
-                {
-                    score += enemies[i].Value;
-                    enemies.RemoveAt(i);
-                }
-            }
-        }
-
-        private void UpdateCollision()
-        {
-            Rectangle playerRectangle;
-            Rectangle enemyRectangle;
-            Rectangle laserRectangle;
-
-            playerRectangle = new Rectangle((int)player.Position.X,
-                (int)player.Position.Y,
-                player.Width,
-                player.Height);
-
-            for (int i = 0; i < enemies.Count; i++)
-            {
-                enemyRectangle = new Rectangle((int)enemies[i].Position.X,
-                    (int)enemies[i].Position.Y,
-                    enemies[i].Width,
-                    enemies[i].height);
-
-                if (playerRectangle.Intersects(enemyRectangle))
-                {
-                    player.Health -= enemies[i].Damage;
-
-                    enemies[i].Health = 0;
-
-                    if (player.Health <= 0)
-                        player.Active = false;
-
-                    AddExplosion(enemies[i].Position);
-
-                    enemies[i].Health = 0;
-
-                }
-
-                for(var l = 0; l < laserBeams.Count; l++)
-                {
-                    laserRectangle = new Rectangle(
-                        (int) laserBeams[l].Position.X,
-                        (int) laserBeams[l].Position.Y,
-                        laserBeams[l].Width,
-                        laserBeams[l].Height);
-
-                    if (laserRectangle.Intersects(enemyRectangle))
-                    {
-                        enemies[i].Health = 0;
-                        laserBeams[l].Active = false;
-                        if (laserRectangle.Intersects(enemyRectangle))
-                        {
-                            AddExplosion(enemies[i].Position);
-
-                            enemies[i].Health = 0;
-
-                            laserBeams[l].Active = false;
-                        }
-                    }
-
-                    
-                }
-
-                
-            }
-
-            
+            MediaPlayer.Play(_gameMusic);
         }
 
         /// <summary>
-        /// UnloadContent will be called once per game and is the place to unload
-        /// game-specific content.
-        /// </summary>
-        protected override void UnloadContent()
-        {
-            // TODO: Unload any non ContentManager content here
-            laserSoundEffectInstance.Dispose();
-            explosionEffectInstance.Dispose();
-        }
-
-        /// <summary>
-        /// Allows the game to run logic such as updating the world,
-        /// checking for collisions, gathering input, and playing audio.
+        ///     Allows the game to run logic such as updating the world,
+        ///     checking for collisions, gathering input, and playing audio.
         /// </summary>
         /// <param name="gameTime">Provides a snapshot of timing values.</param>
         protected override void Update(GameTime gameTime)
         {
-            if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape))
+            if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed ||
+                Keyboard.GetState().IsKeyDown(Keys.Escape))
                 Exit();
 
-            // TODO: Add your update logic here
+            _previousKeyboardState = _currentKeyboardState;
+            _previousMouseState = _currentMouseState;
+            _previousGamePadState = _currentGamePadState;
 
-            //save the previous state of our keyboard, gamepad and mouse so we can determine single key/button presses
-            previousKeyboardState = currentKeyboardState;
-            previousMouseState = currentMouseState;
-            previousGamePadState = currentGamePadState;
-
-            currentGamePadState = GamePad.GetState(PlayerIndex.One);
-            currentKeyboardState = Keyboard.GetState();
-            currentMouseState = Mouse.GetState();
+            _currentGamePadState = GamePad.GetState(PlayerIndex.One);
+            _currentKeyboardState = Keyboard.GetState();
+            _currentMouseState = Mouse.GetState();
 
             UpdatePlayer(gameTime);
 
-            bgLayer1.Update(gameTime);
-            bgLayer2.Update(gameTime);
+            _bgLayer1.Update(gameTime);
+            _bgLayer2.Update(gameTime);
 
             UpdateEnemies(gameTime);
             UpdateCollision();
@@ -321,126 +147,221 @@ namespace WindowsShooterGame
             base.Update(gameTime);
         }
 
+        protected override void UnloadContent()
+        {
+            // Unload any non ContentManager content here
+            _laserSoundEffectInstance.Dispose();
+            _explosionEffectInstance.Dispose();
+        }
+
+        private void FireLaser(GameTime gameTime)
+        {
+            if (gameTime.TotalGameTime - _previousLaserSpawnTime > _laserSpawnTime)
+            {
+                _previousLaserSpawnTime = gameTime.TotalGameTime;
+                AddLaser();
+
+                _laserSoundEffectInstance.Play();
+            }
+        }
+
+        private void AddLaser()
+        {
+            var laserAnimation = new Animation();
+            laserAnimation.Initialize(_laserTexture, _player.Position,
+                46, 16, 1, Color.White, 1f, true);
+            var laser = new Laser();
+
+            var laserPosition = _player.Position;
+            laserPosition.X += 30;
+
+            laser.Initialize(laserAnimation, laserPosition);
+            _laserBeams.Add(laser);
+        }
+        
+        private void UpdateEnemies(GameTime gameTime)
+        {
+            if (gameTime.TotalGameTime - _previousSpawnTime > _enemySpawnTime)
+            {
+                _previousSpawnTime = gameTime.TotalGameTime;
+                AddEnemy();
+            }
+
+            for (var i = _enemies.Count - 1; i >= 0; i--)
+            {
+                _enemies[i].Update(gameTime);
+                if (_enemies[i].Active) continue;
+                _score += _enemies[i].Value;
+                _enemies.RemoveAt(i);
+            }
+
+            /* local func */
+            void AddEnemy()
+            {
+                var enemyAnimation = new Animation();
+                var position = new Vector2(GraphicsDevice.Viewport.Width + _enemyTexture.Width / 2, _random.Next(100, GraphicsDevice.Viewport.Height - 100));
+                var enemy = new Enemy();
+
+                enemyAnimation.Initialize(_enemyTexture, Vector2.Zero, 47, 61, 8, Color.White, 1f, true);
+                enemy.Initialize(enemyAnimation, position);
+
+                _enemies.Add(enemy);
+            }
+        }
+
+        private void UpdateCollision()
+        {
+            var playerRectangle = new Rectangle((int) _player.Position.X,
+                (int) _player.Position.Y,
+                _player.Width,
+                _player.Height);
+
+            for (var i = 0; i < _enemies.Count; i++)
+            {
+                var enemyRectangle = new Rectangle((int) _enemies[i].Position.X,
+                    (int) _enemies[i].Position.Y,
+                    _enemies[i].Width,
+                    _enemies[i].height);
+
+                if (playerRectangle.Intersects(enemyRectangle))
+                {
+                    _player.Health -= _enemies[i].Damage;
+
+                    _enemies[i].Health = 0;
+
+                    if (_player.Health <= 0)
+                        _player.Active = false;
+
+                    AddExplosion(_enemies[i].Position);
+
+                    _enemies[i].Health = 0;
+                }
+
+                for (var l = 0; l < _laserBeams.Count; l++)
+                {
+                    var laserRectangle = new Rectangle(
+                        (int) _laserBeams[l].Position.X,
+                        (int) _laserBeams[l].Position.Y,
+                        _laserBeams[l].Width,
+                        _laserBeams[l].Height);
+
+                    if (laserRectangle.Intersects(enemyRectangle))
+                    {
+                        _enemies[i].Health = 0;
+                        _laserBeams[l].Active = false;
+                        if (laserRectangle.Intersects(enemyRectangle))
+                        {
+                            AddExplosion(_enemies[i].Position);
+
+                            _enemies[i].Health = 0;
+
+                            _laserBeams[l].Active = false;
+                        }
+                    }
+                }
+            }
+            /* local */
+            void AddExplosion(Vector2 enemyPosition)
+            {
+                var explosionAnimation = new Animation();
+                explosionAnimation.Initialize(_explosionTexture,
+                    enemyPosition, 134,
+                    134,
+                    12, Color.White, 1.0f,
+                    true);
+
+                var explosion = new Explosion();
+                explosion.Initialize(explosionAnimation, enemyPosition);
+                _explosions.Add(explosion);
+                _explosionEffectInstance.Play();
+            }
+        }
+
+
         private void UpdateExplosions(GameTime gameTime)
         {
-            for(var e = explosions.Count-1; e >= 0;e--)
+            for (var e = _explosions.Count - 1; e >= 0; e--)
             {
-                explosions[e].Update(gameTime);
-                if(!explosions[e].Active)
-                    explosions.Remove(explosions[e]);
+                _explosions[e].Update(gameTime);
+                if (!_explosions[e].Active)
+                    _explosions.Remove(_explosions[e]);
             }
         }
 
         private void UpdateLaserBeams(GameTime gameTime)
         {
-            for (int i = laserBeams.Count - 1; i >= 0; i--)
+            for (var i = _laserBeams.Count - 1; i >= 0; i--)
             {
-                laserBeams[i].Update(gameTime);
-                if (laserBeams[i].Active == false)
-                {
-                    laserBeams.RemoveAt(i);
-                }
+                _laserBeams[i].Update(gameTime);
+                if (_laserBeams[i].Active == false) _laserBeams.RemoveAt(i);
             }
         }
 
         private void UpdatePlayer(GameTime gameTime)
         {
-            // Get thhe mouse state - later we'll capur eof the mouse presses
-            Vector2 mousePosition = new Vector2(currentMouseState.X, currentMouseState.Y);
+            var mousePosition = new Vector2(_currentMouseState.X, _currentMouseState.Y);
 
-            if (currentMouseState.LeftButton == ButtonState.Pressed)
+            if (_currentMouseState.LeftButton == ButtonState.Pressed)
             {
-                Vector2 posDelta = mousePosition - player.Position;
+                var posDelta = mousePosition - _player.Position;
                 posDelta.Normalize();
-                posDelta = posDelta * playerMoveSpeed;
-                player.Position = player.Position + posDelta;
+                posDelta *= _playerMoveSpeed;
+                _player.Position += posDelta;
             }
-
-            // get thumbstick controls
-            player.Position.X += currentGamePadState.ThumbSticks.Left.X * playerMoveSpeed;
-            player.Position.Y += currentGamePadState.ThumbSticks.Left.Y * playerMoveSpeed;
             
-            // get keyboard controlds
-            if (currentKeyboardState.IsKeyDown(Keys.Left) || currentGamePadState.DPad.Left == ButtonState.Pressed)
-            {
-                player.Position.X -= playerMoveSpeed;
-            }
-            if (currentKeyboardState.IsKeyDown(Keys.Right) || currentGamePadState.DPad.Right == ButtonState.Pressed)
-            {
-                player.Position.X += playerMoveSpeed;
-            }
-            if (currentKeyboardState.IsKeyDown(Keys.Up) || currentGamePadState.DPad.Up == ButtonState.Pressed)
-            {
-                player.Position.Y -= playerMoveSpeed;
-            }
-            if (currentKeyboardState.IsKeyDown(Keys.Down) || currentGamePadState.DPad.Down == ButtonState.Pressed)
-            {
-                player.Position.Y += playerMoveSpeed;
-            }
+            _player.Position.X += _currentGamePadState.ThumbSticks.Left.X * _playerMoveSpeed;
+            _player.Position.Y += _currentGamePadState.ThumbSticks.Left.Y * _playerMoveSpeed;
 
-            // make sure the player does not go out of bounds
-            player.Position.X = MathHelper.Clamp(player.Position.X, player.Width / 2,
-                GraphicsDevice.Viewport.Width - player.Width / 2);
-            player.Position.Y = MathHelper.Clamp(player.Position.Y, player.Height / 2,
-                GraphicsDevice.Viewport.Height - player.Height / 2);
+            if (_currentKeyboardState.IsKeyDown(Keys.Left) || _currentGamePadState.DPad.Left == ButtonState.Pressed)
+                _player.Position.X -= _playerMoveSpeed;
+            if (_currentKeyboardState.IsKeyDown(Keys.Right) || _currentGamePadState.DPad.Right == ButtonState.Pressed)
+                _player.Position.X += _playerMoveSpeed;
+            if (_currentKeyboardState.IsKeyDown(Keys.Up) || _currentGamePadState.DPad.Up == ButtonState.Pressed)
+                _player.Position.Y -= _playerMoveSpeed;
+            if (_currentKeyboardState.IsKeyDown(Keys.Down) || _currentGamePadState.DPad.Down == ButtonState.Pressed)
+                _player.Position.Y += _playerMoveSpeed;
 
-            player.Update(gameTime);
+            _player.Position.X = MathHelper.Clamp(_player.Position.X, _player.Width / 2, GraphicsDevice.Viewport.Width - _player.Width / 2);
+            _player.Position.Y = MathHelper.Clamp(_player.Position.Y, _player.Height / 2, GraphicsDevice.Viewport.Height - _player.Height / 2);
 
-            if (currentKeyboardState.IsKeyDown(Keys.Space) || currentGamePadState.Buttons.X == ButtonState.Pressed)
-            {
+            _player.Update(gameTime);
+
+            if (_currentKeyboardState.IsKeyDown(Keys.Space) || _currentGamePadState.Buttons.X == ButtonState.Pressed)
                 FireLaser(gameTime);
-            }
 
-            if(player.Health <= 0)
+            if (_player.Health <= 0)
             {
-                player.Health = 100;
-                score = 0;
+                _player.Health = 100;
+                _score = 0;
             }
-
         }
-
-        /// <summary>
-        /// This is called when the game should draw itself.
-        /// </summary>
-        /// <param name="gameTime">Provides a snapshot of timing values.</param>
+        
         protected override void Draw(GameTime gameTime)
         {
             GraphicsDevice.Clear(Color.CornflowerBlue);
+            
+            _spriteBatch.Begin();
 
-            // TODO: Add your drawing code here
-            spriteBatch.Begin();
+            _spriteBatch.Draw(_mainBackgroundTexture, Vector2.Zero, Color.White);
+            _bgLayer1.Draw(_spriteBatch);
+            _bgLayer2.Draw(_spriteBatch);
+            _player.Draw(_spriteBatch);
 
-            spriteBatch.Draw(mainBackground, Vector2.Zero, Color.White);
-            bgLayer1.Draw(spriteBatch);
-            bgLayer2.Draw(spriteBatch);
+            foreach (var enemy in _enemies) enemy.Draw(_spriteBatch);
 
-            player.Draw(spriteBatch);
+            foreach (var laser in _laserBeams) laser.Draw(_spriteBatch);
 
-            for (int i = 0; i < enemies.Count; i++)
-            {
-                enemies[i].Draw(spriteBatch);
-            }
+            foreach (var explosion in _explosions) explosion.Draw(_spriteBatch);
 
-            foreach (var l in laserBeams)
-            {
-                l.Draw(spriteBatch);
-            }
-
-            foreach (var explosion in explosions)
-            {
-                explosion.Draw(spriteBatch);
-            }
-
-            spriteBatch.DrawString(font, "score: " + score, new Vector2(
-                GraphicsDevice.Viewport.TitleSafeArea.X, GraphicsDevice.Viewport.TitleSafeArea.Y),
+            _spriteBatch.DrawString(_font, "score: " + _score, new Vector2(
+                    GraphicsDevice.Viewport.TitleSafeArea.X, GraphicsDevice.Viewport.TitleSafeArea.Y),
                 Color.White);
 
-            spriteBatch.DrawString(font, "health: " + player.Health, new Vector2(
+            _spriteBatch.DrawString(_font, "health: " + _player.Health, new Vector2(
                     GraphicsDevice.Viewport.TitleSafeArea.X, GraphicsDevice.Viewport.TitleSafeArea.Y + 30),
                 Color.White);
 
-
-            spriteBatch.End();
+            _spriteBatch.End();
 
             base.Draw(gameTime);
         }

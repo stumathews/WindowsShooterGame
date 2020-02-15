@@ -1,86 +1,78 @@
-﻿using System;
-using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Content; using Microsoft.Xna.Framework.Graphics;
+﻿using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Graphics;
 
 namespace WindowsShooterGame
 {
     public class Animation
     {
-        public Texture2D SpriteStrip;
-        public float Scale;
-        public int ElapsedTime;
-        public int FrameTime;
-        public int FrameCount;
-        public int CurrentFrame;
-        public Color Colour;
-        Rectangle SourceRect = new Rectangle();
-        Rectangle DestinationRect = new Rectangle();
-        public int FrameWidth;
+        private bool _active;
+        private Color _color;
+        private int _currentFrame;
+        private Rectangle _destinationRect;
+        private int _elapsedTime;
+        private int _frameCount;
         public int FrameHeight;
-        public bool Active;
-        public bool Looping;
+        private readonly int _frameTime;
+        public int FrameWidth;
+        private bool _looping;
         public Vector2 Position;
+        private float _scale;
+        private Rectangle _sourceRect;
+        private Texture2D _spriteStrip;
 
-        public void Initialize(Texture2D texture, Vector2 position,
-            int frameWidth, int frameHeight, int frameCount,
+        public Animation(){ }
+
+        public void Initialize(Texture2D texture, Vector2 position, int frameWidth, int frameHeight, int frameCount,
             Color color, float scale, bool looping)
         {
-            this.Colour = color;
-            this.FrameWidth = frameWidth;
-            this.FrameHeight = frameHeight;
-            this.FrameCount = frameCount;
-            this.Scale = scale;
-            this.Looping = looping;
-            this.Position = position;
-            this.SpriteStrip = texture;
-            this.ElapsedTime = 0;
-            this.CurrentFrame = 0;
-
-            this.Active = true;
+            _color = color;
+            FrameWidth = frameWidth;
+            FrameHeight = frameHeight;
+            _frameCount = frameCount;
+            _scale = scale;
+            _looping = looping;
+            Position = position;
+            _spriteStrip = texture;
+            _elapsedTime = 0;
+            _currentFrame = 0;
+            _active = true;
         }
+
         /// <summary>
-        ///  (uses the elapsed time to determine to switch the destination rect on the image strip)
+        ///     (uses the elapsed time to determine to switch the destination rect on the image strip)
         /// </summary>
         /// <param name="gameTime"></param>
         public void Update(GameTime gameTime)
         {
-            if (Active == false) return;
+            if (_active == false) return;
 
-            ElapsedTime += (int) gameTime.ElapsedGameTime.TotalMilliseconds;
+            _elapsedTime += (int) gameTime.ElapsedGameTime.TotalMilliseconds;
 
-            if (ElapsedTime > FrameTime)
+            if (_elapsedTime > _frameTime)
             {
-                CurrentFrame++;
-                if (CurrentFrame == FrameCount)
+                _currentFrame++;
+                if (_currentFrame == _frameCount)
                 {
-                    CurrentFrame = 0;
-                    if (Looping == false)
-                    {
-                        Active = false;
-                    }
+                    _currentFrame = 0;
+                    if (_looping == false) _active = false;
                 }
 
-                ElapsedTime = 0;
+                _elapsedTime = 0;
             }
 
-            // Were would the current frame's rectangle be?
-            SourceRect = new Rectangle(CurrentFrame * FrameWidth, 0, FrameWidth, FrameHeight);
+            _sourceRect = new Rectangle(_currentFrame * FrameWidth, 0, FrameWidth, FrameHeight);
 
-            // This is where we'll be putting it - use player's position to derive this
-            DestinationRect = new Rectangle(
-                (int) Position.X - (int) (FrameWidth * Scale) / 2,
-                (int) Position.Y - (int) (FrameHeight * Scale) / 2,
-                (int) (FrameWidth * Scale),
-                (int) (FrameHeight * Scale));
-
+            _destinationRect = new Rectangle(
+                (int) Position.X - (int) (FrameWidth * _scale) / 2,
+                (int) Position.Y - (int) (FrameHeight * _scale) / 2,
+                (int) (FrameWidth * _scale),
+                (int) (FrameHeight * _scale));
         }
 
         public void Draw(SpriteBatch spriteBatch)
         {
-            if (Active)
-            {
-                spriteBatch.Draw(SpriteStrip, DestinationRect/*where on the screen should i draw it - player position is used to derive this */, SourceRect/*where on the strip is current frame*/, Colour);
-            }
+            if (_active)
+                spriteBatch.Draw(_spriteStrip,  _destinationRect, _sourceRect , _color);
         }
     }
 }
